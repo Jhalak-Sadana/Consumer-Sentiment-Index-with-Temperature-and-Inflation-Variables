@@ -1,0 +1,382 @@
+---
+title: "FINC Assignment 2"
+author: "Prathyusha Netheti, Jhalak Sadana, Gautham mohan babu"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+**Introduction**
+
+This report presents an analysis of consumer sentiment index data collected by the University of Michigan in the United States. The data provides information on the consumer sentiment index which showcase the consumer's degree of optimism about the overall state of the economy and their personal financial situation. It is based on information collected through interviews during the survey of consumers by asking a question regarding their opinion on personal finances, the economy, business conditions, and buying conditions.
+
+The scope of this analysis is restricted till the analysis of the index with temperature and inflation as the variables.
+
+For purpose of analysis, we've made use of four datasets- monthly index, mean temperature dataset, yearly index, and yearly inflation. Apart from the given index data for the analysis by the University of Michigan, the other data sets are taken from external sources. Data has been analyzed using R Studio, which is an integrated development environment for R, a programming language for statistical computing and graphics. To gain an understanding of available data, graphs and tables are presented to show the correlation and trends. In addition, the data has been visualized using R plotting libraries such as ggplot2 and plotly2.
+
+
+**Index of Consumer Sentiment ** 
+
+The information shows the monthly survey of consumer confidence levels in the United States which is set up by the University of Michigan. The index of consumer sentiments is a statistical measurement of the overall health of the economy in terms of consumer opinion. It shows the consumers' perspective toward the economy, personal finances, business conditions, and buying conditions.
+
+This data captures the mood of American consumers. Whether the sentiment is optimistic, pessimistic, or neutral, the survey signals information about near-term consumer spending plans. For instance: If people are confident about the future, they are likely to shop more, boosting the economy and vice versa.
+
+**How is it compiled?** 
+
+Each monthly survey contains approximately 50 core questions, each of which tracks a different aspect of consumer attitudes and expectations.  The samples for the Surveys of Consumers are statistically designed to be representative of all American households, excluding those in Alaska and Hawaii.
+
+Each month, a minimum of 600 interviews are conducted by telephone from the Ann Arbor facility. The core questions cover three broad areas of consumer sentiment:personal finances, business conditions, and buying conditions.
+
+ICS is derived from five questions:
+
+1\. We are interested in how people are getting along financially these days. Would you say that you (and your family living there) are better off or worse off financially than you were a year ago?
+
+2.Now looking ahead\--do you think that a year from now you (and your family living there) will be better off financially, or worse off, or just about the same as now?
+
+3\. Now turning to business conditions in the country as a whole\--do you think that during the next twelve months we'll have good times financially, or bad times, or what?
+
+4.Looking ahead, which would you say is more likely\--that in the country as a whole we'll have continuous good times during the next five years or so, or that we will have periods of widespread unemployment or depression, or what?
+
+5.About the major things people buy for their homes\--such as furniture, a refrigerator, stove, television, and similar things. Generally speaking, do you think now is a good or bad time for people to buy major household items?
+
+**Sample design ** 
+
+The method used is random digit dialing (RDD) of cellular telephone numbers. However, any single monthly sample consists of two parts, an RDD sample of cellular telephone subscribers selected in that month and a sample of RDD sample cellular telephone subscribers who completed interviews six and twelve months previously.
+
+**Components** 
+
+The Index of Consumer Sentiment (ICS) and its two-component series the Index of Current Economic Conditions (ICC) and the Index of Consumer Expectations (ICE). The Index of Consumer Expectations focuses on three areas: how consumers view prospects for their own financial situation, how they view prospects for the general economy over the near term, and their view of prospects for the economy over the long term.The Expectations Index represents only a small part of the entire survey data that is collected on a regular basis.
+
+
+**correlation of Index with Monthly US weather patterns and Inflation Rate ** 
+
+We have used two data sources to correlate with the consumer sentiment index. They are monthly US weather patterns over the years and the Inflation rate over the years.
+
+According to the British Retail Consortium, the weather has the biggest influence on consumer behavior after the economy. It affects consumers' emotional states, drives their purchase decisions, and dictates how much they are willing to spend.
+
+In reality, weather affects practically every consumer purchase decision. The food we eat, the clothes we wear, what car we drive, and even what type of house we buy, can all be determined by commonplace fluctuations in weather. Understanding this relationship can pay huge dividends for both brands and performance marketers. This data can be leveraged to market products at the most profitable time and in the most impactful way. By executing weather-based marketing campaigns, brands can gain a real competitive advantage.
+
+ 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+
+**Import libraries and check the data**
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(readxl)
+```
+
+Reading the consumer sentiment index file
+
+```{r}
+df <- read.csv("C:/Users/jhala/Downloads/sca-table1-on-2022-Nov-19.csv", )
+```
+
+checking the data summary.
+
+```{r}
+summary(df) 
+```
+
+```{r}
+i <- c(1,2,3)
+df[ ,i] <- apply(df[ , i], 2, function(x) as.numeric(as.character(x)))
+summary(df)
+```
+
+```{r}
+#check if any columns have NA value
+names(which(colSums(is.na(df))>0)) 
+```
+
+```{r}
+corr_mat <- round(cor(df),2) # creating correlation matrix
+melted_corr_mat <- melt(corr_mat) # reduce the size of correlation matrix
+head(melted_corr_mat)
+```
+**Correlation of Index with Monthly US Weather Patterns** 
+Showcasing the data that we will use for the analysis
+
+```{r}
+mtd <- read_excel("C:/Users/jhala/Downloads/Mean temperature dataset (2).xlsx")
+head(mtd)
+View(mtd)
+```
+
+Check the data type of mtd DataFrame
+
+```{r}
+str(mtd)
+```
+
+Merge Mean temperature dataset and monthly index dfs (row names) for the purpose of analysis.
+
+```{r}
+joindf <- merge(df,mtd,by=c("Month","Year"))
+head(joindf)
+```
+
+```{r}
+#check if any columns have NA value
+names(which(colSums(is.na(joindf))>0))
+```
+
+group data by month and get a average of temperature and index so that we can analyse monthly relation.
+
+```{r}
+mindex <- joindf %>%
+  group_by( Month) %>%
+  summarise(Monthly_mean=mean(Index),
+            Mean_temp=(mean(Mean)))
+head(mindex)
+```
+
+check if any columns have NA value
+
+```{r}
+names(which(colSums(is.na(mindex))>0)) 
+```
+
+Plots to show the relationship between all the parameters in mindex df(i.e. Mean Index, Mean Temperature and Month)
+
+```{r}
+ggplot(data=mindex, mapping = aes(x = Month, y = Mean_temp)) + 
+  geom_line(aes(color = Monthly_mean)) +
+  theme_bw()+
+  labs(x = "Month", y = "Mean Temperature") + scale_x_discrete(name ="Month", 
+                    limits=c("1","2","3","4","5","6","7","8","9","10","11","12"))
+```
+
+
+```{r}
+ggplot(data=mindex, mapping = aes(x = Month, y = Monthly_mean)) + 
+  geom_point(aes(color = Mean_temp)) +
+  theme_bw()+
+  labs(x = "Month", y = "Monthly Mean Index") + scale_x_discrete(name ="Month", 
+                    limits=c("1","2","3","4","5","6","7","8","9","10","11","12"))
+
+#From this plot we can say that Low temperature affects the consumer sentiment positively.
+```
+The above plot depicts that warmer months have high consumer sentiment index.
+
+```{r}
+# creating correlation matrix of mindex df
+corr_mat_mindex <- round(cor(mindex),2) 
+
+# reduce the size of correlation matrix of mindex df
+melted_corr_mat_mindex <- melt(corr_mat_mindex) 
+head(melted_corr_mat)
+```
+
+
+```{r}
+# plotting the correlation heatmap of mindex df (with three variables)
+ggplot(data = melted_corr_mat_mindex, aes(x=Var1, y=Var2,
+                                          fill=value)) +
+  geom_tile() +
+  geom_text(aes(Var2, Var1, label = value),
+            color = "black", size = 4)
+
+```
+The correlation heatmap shows that temperature and consumer sentiment are negatively correlated i.e., weakly correlated.
+
+```{r}
+ # Reshape data frame
+data_ggp <- data.frame(x = mindex$Month,                   
+                       y = c(mindex$Monthly_mean, mindex$Mean_temp*100),
+                       group = c(rep("Monthly Mean Consumer sentiment index", nrow(mindex)),
+                                 rep("Monthly Mean temperature", nrow(mindex))))
+```
+To see the relation between the variable, we kept these into single graph for analysis.
+```{r}
+# Create ggplot2 plot
+ggp <- ggplot(data_ggp, aes(x, y, col = group)) +             
+  geom_line()
+ggp + scale_x_discrete(name ="Month", 
+                    limits=c("1","2","3","4","5","6","7","8","9","10","11","12"))
+
+```
+
+The above graph shows the relation between Consumer sentiment and temperature.From the graph we can conclude that months with optimum mild temperature have better consumer sentiment index than with the warm months
+
+The complexity of US sentiment and behavior during these uncertain times, as the pandemic becomes endemic, and inflation is top of mind. Consumer sentiment rose by 13% in August, lifting off the all-time low reading for the survey reached in June but remaining 17% below a year ago, according to the University of Michigan Surveys of Consumers.
+
+The gains in sentiment were seen across age, education, income, region, and political affiliation, and can be attributed to the recent deceleration in inflation. Most of this increase was concentrated in expectations, led by a 59% surge in the year-ahead outlook for the economy following two months at its lowest reading since the Great Recession, said U-M economist Joanne Hsu, director of the surveys.
+
+**Correlation of Index with Inflation Rate ** 
+Reading the yearly consumer sentiment index file that we will use for correlation.
+
+```{r}
+ydf<- read.table(file = "C:/Users/jhala/Downloads/yearly index.tsv",  skip = 1 , header = TRUE)
+
+```
+
+
+```{r}
+summary(ydf) 
+```
+
+
+```{r}
+i <- c(1,2)
+ydf[ ,i] <- apply(ydf[ , i], 2, function(x) as.numeric(as.character(x)))
+summary(ydf)
+```
+
+```{r}
+#check if any columns have NA value
+names(which(colSums(is.na(ydf))>0)) 
+#ydf.filterByRow { !it.values.contains(null)
+```
+
+```{r}
+ycorr_mat <- round(cor(ydf),2) # creating correlation matrix
+ymelted_corr_mat <- melt(ycorr_mat) # reduce the size of correlation matrix
+head(ymelted_corr_mat)
+```
+
+
+```{r}
+yid <- read_excel("C:/Users/jhala/Downloads/yearly Inflation .xlsx")
+View(yid)
+head(yid)
+```
+
+```{r}
+#check the data type of yid DataFrame
+str(yid)
+```
+
+```{r}
+#merge Yearly inflation dataset and yearly index dfs (row names)
+joinydf <- merge(ydf,yid,by=c("Year"))
+head(joinydf)
+```
+
+```{r}
+#check if any columns have NA value
+names(which(colSums(is.na(joinydf))>0))
+```
+
+```{r}
+
+#group data by year and get a average of temperature and index sales
+yindex <- joinydf %>%
+  group_by( Year) %>%
+  summarise(Inflation=(`Inflation Rate (%)`),
+            Consumer_sentiment=(Index),
+            Change_in_inflation=(`Annual Change`))
+head(yindex)
+```
+
+```{r}
+#check if any columns have NA value
+names(which(colSums(is.na(yindex))>0)) 
+```
+
+Plots to show the relationship between all the parameters in yindex df(i.e. Mean Yearly Inflation, Mean Yearly Consumer sentiment and Year)
+```{r}
+ggplot(data=yindex, mapping = aes(x = Year, y = Inflation)) + 
+  geom_point(aes(color = Consumer_sentiment)) +
+  theme_bw()+
+  labs(x = "Year", y = "Mean Yearly Inflation")
+```
+
+The above graph shows the inflation over the years.
+
+
+Correlation of Year, Temperature and Inflation over the years.
+```{r}
+# creating correlation matrix of yindex df
+corr_mat_yindex <- round(cor(yindex),2) 
+
+# reduce the size of correlation matrix of aindex df
+melted_corr_mat_yindex <- melt(corr_mat_yindex) 
+head(melted_corr_mat_yindex)
+```
+
+```{r}
+# plotting the correlation heatmap of aindex df (with three variables)
+ggplot(data = melted_corr_mat_yindex, aes(x=Var1, y=Var2,
+                                          fill=value)) +
+  geom_tile() +
+  geom_text(aes(Var2, Var1, label = value),
+            color = "black", size = 4)
+
+```
+
+From the above correlation graph we can say that every variable is positively and stronly correlated with the other two variables .
+
+```{r}
+ # Reshape data frame
+data_ggpy <- data.frame(x = yindex$Year,                   
+                       y = c(yindex$Consumer_sentiment, yindex$Inflation*1000),
+                       group = c(rep("consumer sentiment", nrow(yindex)),
+                                  rep("inflation", nrow(yindex))))
+head(data_ggpy)
+```
+
+```{r}
+# Create ggplot2 plot
+ggpy <- ggplot(data_ggpy, aes(x, y, col = group)) +             
+  geom_line()
+ggpy 
+```
+
+The above graph shows that relationship between the consumer sentiment and inflation over the years. From the graph we can depict that consumer sentiment and inflation are inversely correlated. This shows that consumer sentiments are impacted with the inflation rate. if the inflation rate increases, the consumer becomes pessimistic about the economy and feel that they have less income to spend money. so the consumer sentiments decreases. we can relate this relation with the trends that we will see in current consumer sentiments index. as the inflation rate is increasing in the US, the consumer sentiments index is decreasing. 
+
+**Recent Trends in the Index**
+
+```{r}
+df_subset <- df[df$Year %in% "2022", ]  # Extract recent data rows from the data frame
+ggplot(df_subset, aes(Month, Index)) +                   # Using reduced data frame in plot
+  geom_line() +
+  scale_x_continuous(
+    breaks = seq_along(month.name), 
+    labels = month.name) + ggtitle("Consumer Sentiments Index for Year 2022")
+
+```
+
+
+
+To see the recent trends in the index. we will focus the latest year index. The consumer sentiment for the US starts dipping from the first month of year. This could be due to the spread of the delta and omicron coronavirus and increasing inflation in the US economy led to people having low confidence. People have concerns regarding inflation and a decrease in their real income and might have misinterpreted the Fed's policy moves to slow the economy as a part of the problem rather than of the solution.
+
+It fell sharply in February 2022, at 62.8. Which was low. Interviews with consumers were conducted prior to the Russian invasion so its impact was seen in the next month i.e., march. It fell drastically to 59.4 from 62.8.  At this time the inflation splurged due to fuel prices increase during the Russia and Ukraine war.
+
+Index surprisingly jumped again in April to 65.2, but for this month only. The sentiments declined again the next month.
+
+A more drastic low was seen in the month of June 2022. As the index was 50.  The recent declines have been driven by weakening personal financial prospects, largely due to rising inflation, less confidence in the government's economic policies, and the least favorable long-term economic outlook in a decade.
+
+Then the sentiments revised higher for the month of July, August, and September. It increased a lot in August. These improvements may or may not last, depending on how much concern consumers continue to express over price trends. Additionally, global economic conditions and financial markets point to a tough path ahead for consumers.
+
+**Use cases of corporate use of this data** 
+
+• An increase in this consumer sentiment can help corporates to undergo or plan expansions to meet the rising demand in the future. This will allow them to make more profits while the government may expect increased tax revenues as spending starts to rise.
+
+• The corporates can reduce expenses by adjusting their inventory, placement strategies, and marketing messaging using this consumer sentiments index.
+
+• Corporations can take this data and do their own consumer sentiment research in a position to react more quickly to shifts and get a clearer sense of what the future might hold.
+
+• A decreasing trend in this data could show the pessimistic approach of consumers, which may lead them to avoid significant retail purchases. As manufacturer may therefore reduce their inventories and attempt to slash overheads. This data is very useful during this recession period for US corporations.
+
+• Banking corporates can use this data to raise interest rates and/or invest more in marketing and sales to juice loan volume when consumer sentiments are optimistic in data and vice versa.
+
+• Data can be used to observe the change in consumer sentiment, which can help the way in which businesses and investors can use information about consumer sentiment to build forecasts. After the covid pandemic, consumer behavior shifted to buying more from online rather than offline stores. This can help companies to forecast more online sales.
+
+• This data also impacts the dollar rate, this information can be used by corporations to forecast the impact on exports.
+
+**Conclusion** 
+The analysis shows that weather conditions and inflation are correlated with the consumers' sentiment.
+
+Weather affects consumers on 3 levels: their purchase method, their mood, and their product choice. The weather has a deep-rooted effect on consumer psychology and purchase behavior. By cross-referencing sales data with historical weather information, brands can gain a deep understanding of these nuanced relationships. Armed with these insights, marketers can implement a weather-responsive marketing campaign to deliver much more targeted and impactful promotions. Used intelligently, the weather is an easy win for marketers.
+
+On the other hand, Inflation is highly correlated with consumer sentiment. Every morning a new headline underscores growing economic concerns: Highest inflation since the 1970s. Central banks aggressively raise rates. Consumer sentiment at record lows. Commodity prices near all-time highs. Clearly, inflation has at a minimum, altered the economic mood, and potentially reset the path of global and national economies worldwide for years to come. Although in recent times, consumer confidence overall has plummeted to a new low, savings are high, and there's nuance to how people are responding---depending on age group, income level, and what they're buying.
